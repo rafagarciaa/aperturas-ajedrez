@@ -1,0 +1,8 @@
+node_modules
+dist
+dev-dist
+*.local
+# Se copia desde node_modules/stockfish en "npm install"
+public/engine
+# Configuración local del editor/asistente
+.claude
