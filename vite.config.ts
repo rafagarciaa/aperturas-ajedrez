@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
+// `vite build --mode android` genera la versión que va dentro del APK (npm run build:android).
+export default defineConfig(({ mode }) => ({
   // En GitHub Pages la app vive en /aperturas-ajedrez/ (lo fija el workflow de despliegue).
   base: process.env.BASE_PATH ?? '/',
   // La base de aperturas (~3.900 líneas) va dentro del bundle principal.
@@ -10,6 +11,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // En la app de Android los archivos ya van dentro del APK: sin service worker.
+      disable: mode === 'android',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
@@ -36,4 +39,4 @@ export default defineConfig({
       },
     }),
   ],
-});
+}));

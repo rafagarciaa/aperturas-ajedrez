@@ -6,3 +6,5 @@ dev-dist
 public/engine
 # Configuración local del editor/asistente
 .claude
+# Clave de firma del APK: NUNCA al repositorio (guárdala aparte como copia de seguridad)
+keystore

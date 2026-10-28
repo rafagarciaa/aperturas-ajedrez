@@ -1,0 +1,79 @@
+# Compila el APK de Android (Capacitor) y, si hay clave de firma, lo publica en Releases.
+# Secretos: ANDROID_KEYSTORE_BASE64 (archivo .p12 en base64) y ANDROID_KEYSTORE_PASSWORD.
+name: APK de Android
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+      VERSION_NAME: 1.0.${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run build:android
+
+      - name: Preparar la clave de firma
+        id: key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.p12"
+            echo "path=$RUNNER_TEMP/release.p12" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No hay clave de firma: se genera un APK de prueba y no se publica."
+          fi
+
+      - name: Compilar el APK
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ steps.key.outputs.path }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          if [ -n "$ANDROID_KEYSTORE_PATH" ]; then
+            ./gradlew assembleRelease --no-daemon
+            cp app/build/outputs/apk/release/app-release.apk ../aperturas.apk
+          else
+            ./gradlew assembleDebug --no-daemon
+            cp app/build/outputs/apk/debug/app-debug.apk ../aperturas.apk
+          fi
+
+      - name: Publicar en Releases
+        if: steps.key.outputs.path != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "apk-$VERSION_CODE" aperturas.apk --latest \
+            --title "Aperturas para Android $VERSION_NAME" \
+            --notes "Descarga **aperturas.apk** desde el móvil y ábrelo para instalarlo. La primera vez Android pedirá permiso para instalar apps de esta fuente. Las versiones nuevas se instalan encima sin perder tus estadísticas."
+
+      - name: Guardar el APK de prueba
+        if: steps.key.outputs.path == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: aperturas-prueba
+          path: aperturas.apk
+          retention-days: 7

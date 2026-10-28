@@ -5,6 +5,7 @@ teoría y, al terminar la línea, contra **Stockfish 19**. Funciona en escritori
 **PWA** (se instala como una app y funciona sin conexión).
 
 **Web publicada:** https://rafagarciaa.github.io/aperturas-ajedrez/
+**App de Android:** https://github.com/rafagarciaa/aperturas-ajedrez/releases/latest/download/aperturas.apk
 
 ## Cómo funciona
 
@@ -71,12 +72,20 @@ Cada `push` a `main` lanza el workflow `.github/workflows/deploy.yml`, que compi
 BASE_PATH=/aperturas-ajedrez/ npm run build
 ```
 
-### Empaquetado nativo (opcional)
+### App de Android (APK)
 
-El mismo código se puede empaquetar para tiendas o como ejecutable:
+El proyecto nativo está en `android/` ([Capacitor](https://capacitorjs.com/)). No hace falta Android
+Studio: el workflow `.github/workflows/android.yml` compila el APK en GitHub en cada `push` a
+`main`, lo firma con la clave de los secretos `ANDROID_KEYSTORE_BASE64` y
+`ANDROID_KEYSTORE_PASSWORD`, y lo publica en *Releases*. Cada versión lleva un número mayor, así
+que se instala encima de la anterior sin perder los datos.
 
-- **Android / iOS** con [Capacitor](https://capacitorjs.com/) (requiere Android Studio / Xcode).
-- **Windows / macOS** con [Tauri](https://tauri.app/) (requiere Rust) o Electron.
+La clave está en `keystore/` (fuera de git). **Guarda una copia**: sin ella no se pueden firmar
+actualizaciones de la misma app.
+
+Para compilar en local (con Android Studio instalado): `npm run build:android` y abrir `android/`.
+
+En iPhone la opción es la PWA: una app nativa exige Mac, Xcode y cuenta de desarrollador de Apple.
 
 ## Estructura
 
